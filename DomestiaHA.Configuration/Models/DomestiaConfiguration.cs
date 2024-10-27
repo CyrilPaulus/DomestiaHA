@@ -1,4 +1,4 @@
-﻿namespace DomestiaHA.Configuration;
+﻿namespace DomestiaHA.Configuration.Models;
 
 public class DomestiaConfiguration
 {

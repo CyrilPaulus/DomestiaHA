@@ -1,33 +1,21 @@
-﻿
-using DomestiaHA.Configuration;
+﻿using DomestiaHA.Abstraction;
+using DomestiaHA.Configuration.Extensions;
 using DomestiaHA.MQTTClient;
+using DomestiaHA.MQTTClient.Services;
 
-using MQTTnet;
-using MQTTnet.Client;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
 
-var config = DomestiaHAConfiguration.ParseConfiguration( "config.json" ) ?? throw new Exception( "Invalid configuration" );
+var builder = Host.CreateApplicationBuilder( args );
 
-var domestiaLightService = new FakeDomestiaLightService();
-var haMqttService = new HAMQTTService( domestiaLightService, config.Lights );
-var mqttFactory = new MqttFactory();
-
-using( var mqttClient = mqttFactory.CreateMqttClient() )
+builder.Services.AddDomestiaHAConfiguration( config =>
 {
-    var mqttClientOptions = new MqttClientOptionsBuilder()
-        .WithTcpServer( config.MQTT.BrokerIPAddress, config.MQTT.BrokerPort )
-        .Build();
+    config.ConfigurationFile = "config.json";
+} );
 
-    await mqttClient.ConnectAsync( mqttClientOptions, CancellationToken.None );
+builder.Services.AddSingleton<IHAMQTTService, HAMQTTService>();
+builder.Services.AddSingleton<IDomestiaLightService, FakeDomestiaLightService>();
+builder.Services.AddHostedService<DomestiaHAHostedService>();
 
-    await haMqttService.InitializeClient( mqttClient );
-
-    while( true )
-    {
-        await haMqttService.PublishStateUpdate( mqttClient );
-        await Task.Delay( 1000 );
-    }
-
-    await mqttClient.DisconnectAsync();
-
-    Console.WriteLine( "MQTT application message is published." );
-}
+var app = builder.Build();
+app.Run();

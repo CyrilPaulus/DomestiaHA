@@ -3,17 +3,21 @@ using System.Text.RegularExpressions;
 
 using DomestiaHA.Abstraction;
 using DomestiaHA.Configuration;
+using DomestiaHA.Configuration.Models;
 using DomestiaHA.MQTTClient.HAEntities;
+using DomestiaHA.MQTTClient.Services;
 
 using MQTTnet;
 using MQTTnet.Client;
 
 namespace DomestiaHA.MQTTClient;
 
-internal partial class HAMQTTService( IDomestiaLightService domestiaLightService, IEnumerable<LightConfiguration> lights )
+internal partial class HAMQTTService(
+    IDomestiaLightService domestiaLightService,
+    IDomestiaHAConfigurationService configurationService ) : IHAMQTTService
 {
     private readonly IDomestiaLightService _domestiaLightService = domestiaLightService;
-    private readonly IEnumerable<LightConfiguration> _lights = lights;
+    private readonly IEnumerable<LightConfiguration> _lights = configurationService.GetLightConfigurations();
 
     public async Task InitializeClient( IMqttClient client )
     {
@@ -95,7 +99,7 @@ internal partial class HAMQTTService( IDomestiaLightService domestiaLightService
         return Task.CompletedTask;
     }
 
-    public HALight ConvertLightConfiguration( LightConfiguration lightConfiguration )
+    private HALight ConvertLightConfiguration( LightConfiguration lightConfiguration )
     {
         var lightId = GetLightId( lightConfiguration );
         return new HALight()
@@ -109,7 +113,7 @@ internal partial class HAMQTTService( IDomestiaLightService domestiaLightService
         };
     }
 
-    public static string GetLightId( LightConfiguration lightConfiguration )
+    private string GetLightId( LightConfiguration lightConfiguration )
     {
         return lightConfiguration.Label.ToLowerInvariant().Replace( " ", "_" );
     }
