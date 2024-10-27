@@ -1,7 +1,6 @@
-﻿namespace DomestiaHA.Configuration
+﻿namespace DomestiaHA.Configuration;
+
+public class DomestiaConfiguration
 {
-    public class DomestiaConfiguration
-    {
-        public required string DeviceIPAddress { get; set; }
-    }
+    public required string DeviceIPAddress { get; set; }
 }
