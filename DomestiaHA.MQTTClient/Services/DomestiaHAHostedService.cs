@@ -34,12 +34,12 @@ internal class DomestiaHAHostedService : BackgroundService
 
         await mqttClient.ConnectAsync( mqttClientOptions, stoppingToken );
 
-        await _haMQTTService.InitializeClient( mqttClient );
+        await _haMQTTService.Initialize( mqttClient );
 
         while( !stoppingToken.IsCancellationRequested )
         {
-            await _haMQTTService.PublishStateUpdate( mqttClient );
-            await Task.Delay( _refreshInterval );
+            await _haMQTTService.PublishAllLightsStateUpdates();
+            await Task.Delay( _refreshInterval, stoppingToken );
         }
 
         await mqttClient.DisconnectAsync();

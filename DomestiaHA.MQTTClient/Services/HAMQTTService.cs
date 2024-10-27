@@ -19,9 +19,13 @@ internal partial class HAMQTTService(
     private readonly IDomestiaLightService _domestiaLightService = domestiaLightService;
     private readonly IEnumerable<LightConfiguration> _lights = configurationService.GetLightConfigurations();
 
-    public async Task InitializeClient( IMqttClient client )
+    private IMqttClient? _client;
+
+    public async Task Initialize( IMqttClient client )
     {
-        client.ApplicationMessageReceivedAsync += Client_ApplicationMessageReceivedAsync;
+        _client = client;
+        _client.ApplicationMessageReceivedAsync += Client_ApplicationMessageReceivedAsync;
+
         foreach( var light in _lights )
         {
             var lightId = GetLightId( light );
@@ -47,41 +51,47 @@ internal partial class HAMQTTService(
         }
     }
 
-    public async Task PublishStateUpdate( IMqttClient client )
+    public async Task PublishAllLightsStateUpdates()
     {
         foreach( var light in _lights )
         {
-            var lightId = GetLightId( light );
-            var brigthness = _domestiaLightService.GetBrigthness( lightId );
-            var haLight = ConvertLightConfiguration( light );
-            var haLightState = new HALightState()
-            {
-                State = brigthness > 0 ? HALightStateEnum.ON : HALightStateEnum.OFF,
-                Brightness = brigthness,
-            };
-
-            var message = new MqttApplicationMessageBuilder()
-                .WithTopic( haLight.StateTopic )
-                .WithPayload( JsonSerializer.Serialize( haLightState ) )
-                .Build();
-
-            var publishResult = await client.PublishAsync( message );
-            if( !publishResult.IsSuccess )
-                throw new InvalidOperationException( $"Can't publish light: {light.Label}" );
+            await PublishLigthStateUpdate( light );
         }
     }
 
-    private Task Client_ApplicationMessageReceivedAsync( MqttApplicationMessageReceivedEventArgs arg )
+    private async Task PublishLigthStateUpdate( LightConfiguration light )
+    {
+        var lightId = GetLightId( light );
+        var brigthness = _domestiaLightService.GetBrigthness( lightId );
+        var haLight = ConvertLightConfiguration( light );
+        var haLightState = new HALightState()
+        {
+            State = brigthness > 0 ? HALightStateEnum.ON : HALightStateEnum.OFF,
+            Brightness = brigthness,
+        };
+
+        var message = new MqttApplicationMessageBuilder()
+            .WithTopic( haLight.StateTopic )
+            .WithPayload( JsonSerializer.Serialize( haLightState ) )
+            .Build();
+
+        var publishResult = await _client!.PublishAsync( message );
+        if( !publishResult.IsSuccess )
+            throw new InvalidOperationException( $"Can't publish light: {light.Label}" );
+    }
+
+    private async Task Client_ApplicationMessageReceivedAsync( MqttApplicationMessageReceivedEventArgs arg )
     {
         var stateStr = arg.ApplicationMessage.ConvertPayloadToString();
         var regex = MyRegex();
         var match = regex.Match( arg.ApplicationMessage.Topic );
         if( !match.Success )
-            return Task.CompletedTask;
+            return;
 
         var lightId = match.Groups[1].Value;
-        var light = _lights.First( x => GetLightId( x ) == lightId );
-
+        var light = _lights.FirstOrDefault( x => GetLightId( x ) == lightId );
+        if( light is null )
+            return;
 
         var haLightState = JsonSerializer.Deserialize<HALightState>( stateStr )!;
 
@@ -95,8 +105,7 @@ internal partial class HAMQTTService(
 
         _domestiaLightService.SetBrigthness( lightId, brightness );
 
-
-        return Task.CompletedTask;
+        await PublishLigthStateUpdate( light );
     }
 
     private HALight ConvertLightConfiguration( LightConfiguration lightConfiguration )
