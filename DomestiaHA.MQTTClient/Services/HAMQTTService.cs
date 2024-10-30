@@ -57,23 +57,23 @@ internal partial class HAMQTTService( ILightService domestiaLightService ) : IHA
 
     public async Task PublishAllLightsStateUpdates()
     {
-        var allBrightness = await _domestiaLightService.GetAllBrigthness();
+        var allBrightness = await _domestiaLightService.GetAllBrightness();
 
         foreach( var light in _lights.Values )
         {
-            await PublishLigthStateUpdate( light, allBrightness[light.Label] );
+            await PublishLightStateUpdate( light, allBrightness[light.Label] );
         }
     }
 
-    private async Task PublishLigthStateUpdate(
+    private async Task PublishLightStateUpdate(
         Light light,
-        int brigthness )
+        int brightness )
     {
         var haLight = ConvertLightConfiguration( light );
         var haLightState = new HALightState()
         {
-            State = brigthness > 0 ? HALightStateEnum.ON : HALightStateEnum.OFF,
-            Brightness = brigthness,
+            State = brightness > 0 ? HALightStateEnum.ON : HALightStateEnum.OFF,
+            Brightness = brightness,
         };
 
         var message = new MqttApplicationMessageBuilder()
@@ -109,11 +109,10 @@ internal partial class HAMQTTService( ILightService domestiaLightService ) : IHA
             _ => throw new InvalidOperationException()
         };
 
-        await _domestiaLightService.SetBrigthness( light, brightness );
+        await _domestiaLightService.SetBrightness( light, brightness );
 
-        var brigthness = await _domestiaLightService.GetBrigthness( light );
-
-        await PublishLigthStateUpdate( light, brigthness );
+        brightness = await _domestiaLightService.GetBrightness( light );
+        await PublishLightStateUpdate( light, brightness );
     }
 
     private HALight ConvertLightConfiguration( Light light )

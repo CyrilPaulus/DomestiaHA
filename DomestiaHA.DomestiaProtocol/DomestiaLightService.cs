@@ -62,7 +62,7 @@ public class DomestiaLightService : ILightService, IDisposable
             .ToList();
     }
 
-    public async Task<Dictionary<string, int>> GetAllBrigthness()
+    public async Task<Dictionary<string, int>> GetAllBrightness()
     {
         var command = new GetOutputsValueCommand();
         var result = await _connector.ExecuteCommand<GetOutputsValueCommand, GetOutputsValueResponse>( command );
@@ -79,18 +79,18 @@ public class DomestiaLightService : ILightService, IDisposable
             .ToDictionary( x => x.Label, x => ConvertToBrightness( x.Value, IsDimmable( x.RelayType ) ) );
     }
 
-    public async Task<int> GetBrigthness( Light light )
+    public async Task<int> GetBrightness( Light light )
     {
-        var values = await GetAllBrigthness();
+        var values = await GetAllBrightness();
         return values[light.Label];
     }
 
-    public async Task SetBrigthness( Light light, int brigthness )
+    public async Task SetBrightness( Light light, int brightness )
     {
         var relay = _relayConfigurations[light.Label];
         var isDimmable = IsDimmable( relay.RelayType );
 
-        var outputValue = ConvertFromBrightness( brigthness, isDimmable );
+        var outputValue = ConvertFromBrightness( brightness, isDimmable );
 
         if( isDimmable )
         {
@@ -98,7 +98,7 @@ public class DomestiaLightService : ILightService, IDisposable
             return;
         }
 
-        var isOn = await GetBrigthness( light ) >= 1;
+        var isOn = await GetBrightness( light ) >= 1;
 
         if( outputValue == 0 && isOn )
         {

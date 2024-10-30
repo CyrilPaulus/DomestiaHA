@@ -12,24 +12,24 @@ public interface ILightService
     public List<Light> GetLights();
 
     /// <summary>
-    /// Set a light brigthness value
+    /// Set a light brightness value
     /// </summary>
     /// <param name="lightId">lightId</param>
-    /// <param name="brigthness">brightness value [0, 255]</param>
-    public Task SetBrigthness( Light light, int brigthness );
+    /// <param name="brightness">brightness value [0, 255]</param>
+    public Task SetBrightness( Light light, int brightness );
 
     /// <summary>
-    /// Get a light brigthness value
+    /// Get a light brightness value
     /// </summary>
     /// <param name="lightId">lightId</param>
-    /// <returns>brigthness [0,255]</returns>
-    public Task<int> GetBrigthness( Light light );
+    /// <returns>brightness [0,255]</returns>
+    public Task<int> GetBrightness( Light light );
 
     /// <summary>
-    /// Get all light brigthness in one command.
+    /// Get all light brightness in one command.
     /// </summary>
-    /// <returns>All ligth brigthness [0,255]</returns>
-    public Task<Dictionary<string, int>> GetAllBrigthness();
+    /// <returns>All light brightness [0,255]</returns>
+    public Task<Dictionary<string, int>> GetAllBrightness();
 
     public Task Connect();
 

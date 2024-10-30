@@ -17,7 +17,7 @@ public class HALightState
 
 
     /// <summary>
-    /// Brigthness between 0-255
+    /// Brightness between 0-255
     /// </summary>
     [JsonPropertyName( "brightness" )]
     public int Brightness { get; set; }
