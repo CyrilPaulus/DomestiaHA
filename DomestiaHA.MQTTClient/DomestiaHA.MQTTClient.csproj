@@ -12,6 +12,7 @@
   <ItemGroup>
     <ProjectReference Include="..\DomestiaHA.Abstraction\DomestiaHA.Abstraction.csproj" />
     <ProjectReference Include="..\DomestiaHA.Configuration\DomestiaHA.Configuration.csproj" />
+    <ProjectReference Include="..\DomestiaHA.DomestiaProtocol\DomestiaHA.DomestiaProtocol.csproj" />
   </ItemGroup>
   <ItemGroup>
     <None Update="config.json">

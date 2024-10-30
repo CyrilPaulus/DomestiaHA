@@ -1,5 +1,6 @@
 ﻿using DomestiaHA.Abstraction;
 using DomestiaHA.Configuration.Extensions;
+using DomestiaHA.DomestiaProtocol;
 using DomestiaHA.MQTTClient;
 using DomestiaHA.MQTTClient.Services;
 
@@ -15,6 +16,7 @@ builder.Services.AddDomestiaHAConfiguration( config =>
 
 builder.Services.AddSingleton<IHAMQTTService, HAMQTTService>();
 builder.Services.AddSingleton<IDomestiaLightService, FakeDomestiaLightService>();
+builder.Services.AddSingleton<DomestiaService>();
 builder.Services.AddHostedService<DomestiaHAHostedService>();
 
 var app = builder.Build();

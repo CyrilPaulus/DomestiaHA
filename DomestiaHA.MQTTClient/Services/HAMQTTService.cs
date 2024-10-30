@@ -3,7 +3,8 @@ using System.Text.RegularExpressions;
 
 using DomestiaHA.Abstraction;
 using DomestiaHA.Configuration;
-using DomestiaHA.Configuration.Models;
+using DomestiaHA.DomestiaProtocol;
+using DomestiaHA.DomestiaProtocol.Enums;
 using DomestiaHA.MQTTClient.HAEntities;
 using DomestiaHA.MQTTClient.Services;
 
@@ -13,25 +14,28 @@ using MQTTnet.Client;
 namespace DomestiaHA.MQTTClient;
 
 internal partial class HAMQTTService(
+    DomestiaService domestiaService,
     IDomestiaLightService domestiaLightService,
     IDomestiaHAConfigurationService configurationService ) : IHAMQTTService
 {
+    private readonly DomestiaService _domestiaService = domestiaService;
     private readonly IDomestiaLightService _domestiaLightService = domestiaLightService;
-    private readonly IEnumerable<LightConfiguration> _lights = configurationService.GetLightConfigurations();
+    private readonly Dictionary<string, DomestiaRelayConfiguration> _lights = domestiaService.GetRelayConfigurations();
 
     private IMqttClient? _client;
 
     public async Task Initialize( IMqttClient client )
     {
+        await _domestiaService.Connect( "192.168.0.3" );
+
         _client = client;
         _client.ApplicationMessageReceivedAsync += Client_ApplicationMessageReceivedAsync;
 
-        foreach( var light in _lights )
+        foreach( var light in _lights.Values )
         {
             var lightId = GetLightId( light );
             var haLight = ConvertLightConfiguration( light );
             var topic = $"homeassistant/light/{lightId}/config";
-
 
             var message = new MqttApplicationMessageBuilder()
                 .WithTopic( topic )
@@ -53,16 +57,18 @@ internal partial class HAMQTTService(
 
     public async Task PublishAllLightsStateUpdates()
     {
+        var allOutputValues = await _domestiaService.GetOutputValues();
+
         foreach( var light in _lights )
         {
-            await PublishLigthStateUpdate( light );
+            await PublishLigthStateUpdate( light.Value, allOutputValues[light.Value.Label] );
         }
     }
 
-    private async Task PublishLigthStateUpdate( LightConfiguration light )
+    private async Task PublishLigthStateUpdate(
+        DomestiaRelayConfiguration light,
+        byte brigthness )
     {
-        var lightId = GetLightId( light );
-        var brigthness = _domestiaLightService.GetBrigthness( lightId );
         var haLight = ConvertLightConfiguration( light );
         var haLightState = new HALightState()
         {
@@ -89,26 +95,28 @@ internal partial class HAMQTTService(
             return;
 
         var lightId = match.Groups[1].Value;
-        var light = _lights.FirstOrDefault( x => GetLightId( x ) == lightId );
+        var light = _lights.FirstOrDefault( x => GetLightId( x.Value ) == lightId ).Value;
         if( light is null )
             return;
 
         var haLightState = JsonSerializer.Deserialize<HALightState>( stateStr )!;
 
-        var brightness = (light.Dimmable, haLightState.State) switch
+        var brightness = (light.RelayType == RelayType.DimmerContinue || light.RelayType == RelayType.DimmerStop, haLightState.State) switch
         {
             (true, _ ) => haLightState.Brightness,
-            (false, HALightStateEnum.ON ) => 255,
+            (false, HALightStateEnum.ON ) => 64,
             (false, HALightStateEnum.OFF ) => 0,
             _ => throw new InvalidOperationException()
         };
 
-        _domestiaLightService.SetBrigthness( lightId, brightness );
+        await _domestiaService.SetOutputValue( light.Label, (byte) brightness );
 
-        await PublishLigthStateUpdate( light );
+        var brigthness = await _domestiaService.GetOutputValue( light.Label );
+
+        await PublishLigthStateUpdate( light, brigthness );
     }
 
-    private HALight ConvertLightConfiguration( LightConfiguration lightConfiguration )
+    private HALight ConvertLightConfiguration( DomestiaRelayConfiguration lightConfiguration )
     {
         var lightId = GetLightId( lightConfiguration );
         return new HALight()
@@ -117,12 +125,12 @@ internal partial class HAMQTTService(
             UniqueId = $"d_{lightConfiguration.RelayId}",
             CommandTopic = $"domestia/light/{lightId}/set",
             StateTopic = $"domestia/light/{lightId}/state",
-            Brightness = lightConfiguration.Dimmable,
+            Brightness = lightConfiguration.RelayType == RelayType.DimmerContinue || lightConfiguration.RelayType == RelayType.DimmerStop,
             Schema = "json"
         };
     }
 
-    private string GetLightId( LightConfiguration lightConfiguration )
+    private string GetLightId( DomestiaRelayConfiguration lightConfiguration )
     {
         return lightConfiguration.Label.ToLowerInvariant().Replace( " ", "_" );
     }

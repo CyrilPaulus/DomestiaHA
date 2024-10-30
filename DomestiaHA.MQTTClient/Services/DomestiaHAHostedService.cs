@@ -11,7 +11,7 @@ internal class DomestiaHAHostedService : BackgroundService
     private readonly IDomestiaHAConfigurationService configurationService;
     private readonly IHAMQTTService _haMQTTService;
 
-    private readonly TimeSpan _refreshInterval = TimeSpan.FromSeconds( 10 );
+    private readonly TimeSpan _refreshInterval = TimeSpan.FromSeconds( 1 );
 
     public DomestiaHAHostedService(
         IDomestiaHAConfigurationService domestiaHAConfigurationService,
