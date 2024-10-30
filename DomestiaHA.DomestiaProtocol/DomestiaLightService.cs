@@ -66,6 +66,8 @@ public class DomestiaLightService : ILightService, IDisposable
     {
         var command = new GetOutputsValueCommand();
         var result = await _connector.ExecuteCommand<GetOutputsValueCommand, GetOutputsValueResponse>( command );
+        if( result == null )
+            throw new Exception( "Can't load lights..." );
 
         return result.OutputsValue
             .Join( _relayConfigurations.Values, x => x.Key, x => x.RelayId, ( ov, relay ) => new
@@ -131,11 +133,10 @@ public class DomestiaLightService : ILightService, IDisposable
         return result.OutputName;
     }
 
-    private async Task<bool> ToggleOutput( int outputId )
+    private async Task ToggleOutput( int outputId )
     {
         var command = new ToggleOutputCommand( (byte) outputId );
         var result = await _connector.ExecuteCommand<ToggleOutputCommand, ToggleOutputResponse>( command );
-        return result.Success;
     }
 
     private async Task SetOuputOff( int outputId )
@@ -175,7 +176,8 @@ public class DomestiaLightService : ILightService, IDisposable
         {
             (0, false ) => 0,
             ( > 0, false ) => 1,
-            (_, true ) => (byte) (value / 255.0 * 64)
+            (_, true ) => (byte) (value / 255.0 * 64),
+            _ => 0
         };
     }
 
