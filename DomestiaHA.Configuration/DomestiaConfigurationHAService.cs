@@ -16,6 +16,11 @@ internal class DomestiaConfigurationHAService : IDomestiaHAConfigurationService
         LoadConfiguration( options.Value.ConfigurationFile );
     }
 
+    public DomestiaConfiguration GetDomestiaConfiguration()
+    {
+        return _configuration.Domestia;
+    }
+
     public IEnumerable<LightConfiguration> GetLightConfigurations()
     {
         return _configuration.Lights;

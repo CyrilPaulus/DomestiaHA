@@ -15,8 +15,7 @@ builder.Services.AddDomestiaHAConfiguration( config =>
 } );
 
 builder.Services.AddSingleton<IHAMQTTService, HAMQTTService>();
-builder.Services.AddSingleton<IDomestiaLightService, FakeDomestiaLightService>();
-builder.Services.AddSingleton<DomestiaService>();
+builder.Services.AddSingleton<ILightService, DomestiaLightService>();
 builder.Services.AddHostedService<DomestiaHAHostedService>();
 
 var app = builder.Build();

@@ -13,6 +13,8 @@ public class DomestiaConnector : IDisposable
     private TcpClient? _tcpClient;
     private NetworkStream? _stream;
 
+    private readonly SemaphoreSlim _semaphore = new SemaphoreSlim( 1, 1 );
+
     public async Task Connect( string ip )
     {
         var ipEndPoint = IPEndPoint.Parse( $"{ip}:{DOMESTIA_TCP_PORT}" );
@@ -26,27 +28,35 @@ public class DomestiaConnector : IDisposable
         where TCommand : BaseDomestiaCommand
         where TResponse : BaseDomestiaResponse<TCommand>, new()
     {
-        if( _stream == null )
-            throw new Exception( "Client should be initialized" );
+        await _semaphore.WaitAsync();
+        try
+        {
+            if( _stream == null )
+                throw new Exception( "Client should be initialized" );
 
-        var commandBytes = SerializeCommand( command );
-        _stream.Write( commandBytes );
+            var commandBytes = SerializeCommand( command );
+            _stream.Write( commandBytes );
 
-        await _stream.FlushAsync();
+            await _stream.FlushAsync();
 
-        // Read response
-        var buffer = new byte[1024];
-        var count = await _stream.ReadAsync( buffer );
-        buffer = buffer.Take( count ).ToArray();
+            // Read response
+            var buffer = new byte[1024];
+            var count = await _stream.ReadAsync( buffer );
+            buffer = buffer.Take( count ).ToArray();
 
-        // Compare CRC
-        var crc = ComputeCRC( buffer.Take( buffer.Length - 1 ).ToArray() );
-        //if( crc != buffer[^1] )
-        //    return null;
+            // Compare CRC
+            var crc = ComputeCRC( buffer.Take( buffer.Length - 1 ).ToArray() );
+            //if( crc != buffer[^1] )
+            //    return null;
 
-        var response = new TResponse();
-        response.Deserialize( buffer.Take( buffer.Length - 1 ).ToArray() );
-        return response;
+            var response = new TResponse();
+            response.Deserialize( buffer.Take( buffer.Length - 1 ).ToArray() );
+            return response;
+        }
+        finally
+        {
+            _semaphore.Release();
+        }
     }
 
 

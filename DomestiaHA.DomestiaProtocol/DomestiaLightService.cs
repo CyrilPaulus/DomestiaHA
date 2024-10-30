@@ -1,18 +1,21 @@
-﻿using DomestiaHA.DomestiaProtocol.Commands;
+﻿using DomestiaHA.Abstraction;
+using DomestiaHA.Abstraction.Models;
+using DomestiaHA.DomestiaProtocol.Commands;
 using DomestiaHA.DomestiaProtocol.Enums;
 using DomestiaHA.DomestiaProtocol.Responses;
 
 using Microsoft.Extensions.Logging;
 
 namespace DomestiaHA.DomestiaProtocol;
-public class DomestiaService : IDisposable
+public class DomestiaLightService : ILightService, IDisposable
 {
-    private readonly ILogger<DomestiaService> _logger;
+    private readonly ILogger<DomestiaLightService> _logger;
 
     private readonly DomestiaConnector _connector;
+
     private Dictionary<string, DomestiaRelayConfiguration> _relayConfigurations = new();
 
-    public DomestiaService( ILogger<DomestiaService> logger )
+    public DomestiaLightService( ILogger<DomestiaLightService> logger )
     {
         _connector = new DomestiaConnector();
         _logger = logger;
@@ -41,12 +44,15 @@ public class DomestiaService : IDisposable
 
     }
 
-    public Dictionary<string, DomestiaRelayConfiguration> GetRelayConfigurations()
+    public List<Light> GetLights()
     {
-        return _relayConfigurations;
+        return _relayConfigurations
+            .Values
+            .Select( x => new Light( x.Label, IsDimmable( x.RelayType ) ) )
+            .ToList();
     }
 
-    public async Task<Dictionary<string, byte>> GetOutputValues()
+    public async Task<Dictionary<string, int>> GetAllBrigthness()
     {
         var command = new GetOutputsValueCommand();
         var result = await _connector.ExecuteCommand<GetOutputsValueCommand, GetOutputsValueResponse>( command );
@@ -55,43 +61,47 @@ public class DomestiaService : IDisposable
             .Join( _relayConfigurations.Values, x => x.Key, x => x.RelayId, ( ov, relay ) => new
             {
                 Label = relay.Label,
+                RelayType = relay.RelayType,
                 Value = ov.Value
             } )
-            .ToDictionary( x => x.Label, x => x.Value );
+            .ToDictionary( x => x.Label, x => ConvertToBrightness( x.Value, IsDimmable( x.RelayType ) ) );
     }
 
-    public async Task<byte> GetOutputValue( string label )
+    public async Task<int> GetBrigthness( Light light )
     {
-        var values = await GetOutputValues();
-        return values[label];
+        var values = await GetAllBrigthness();
+        return values[light.Label];
     }
 
-    public async Task SetOutputValue( string label, byte value )
+    public async Task SetBrigthness( Light light, int brigthness )
     {
-        var relay = _relayConfigurations[label];
+        var relay = _relayConfigurations[light.Label];
+        var isDimmable = IsDimmable( relay.RelayType );
 
-        if( relay.RelayType == RelayType.DimmerContinue || relay.RelayType == RelayType.DimmerStop )
+        var outputValue = ConvertFromBrightness( brigthness, isDimmable );
+
+        if( isDimmable )
         {
-            await SetOuputDimValue( relay.RelayId, value );
+            await SetOuputDimValue( relay.RelayId, outputValue );
             return;
         }
 
-        var isOn = await GetOutputValue( label ) >= 1;
+        var isOn = await GetBrigthness( light ) >= 1;
 
-        if( value == 0 && isOn )
+        if( outputValue == 0 && isOn )
         {
             await SetOuputOff( relay.RelayId );
             return;
         }
 
-        if( value >= 1 && !isOn )
+        if( outputValue >= 1 && !isOn )
         {
             await ToggleOutput( relay.RelayId );
             return;
         }
     }
 
-    public async Task<Dictionary<int, RelayType>> GetOutputTypes()
+    private async Task<Dictionary<int, RelayType>> GetOutputTypes()
     {
         var command = new GetOutputsTypeCommand();
         var result = await _connector.ExecuteCommand<GetOutputsTypeCommand, GetOutputTypeResponse>( command );
@@ -130,10 +140,39 @@ public class DomestiaService : IDisposable
         var result = await _connector.ExecuteCommand<SetDimOutputCommand, SetDimOutputResponse>( command );
     }
 
+    private bool IsDimmable( RelayType relayType )
+    {
+        return relayType switch
+        {
+            RelayType.DimmerContinue or RelayType.DimmerStop => true,
+            _ => false
+        };
+    }
 
+    private int ConvertToBrightness( byte value, bool isDimmable )
+    {
+        return (value, isDimmable) switch
+        {
+            (0, false ) => 0,
+            ( > 0, false ) => 255,
+            (_, true ) => (int) (value / 64.0 * 255)
+        };
+    }
+
+    private byte ConvertFromBrightness( int value, bool isDimmable )
+    {
+        return (value, isDimmable) switch
+        {
+            (0, false ) => 0,
+            ( > 0, false ) => 1,
+            (_, true ) => (byte) (value / 255.0 * 64)
+        };
+    }
 
     public void Dispose()
     {
         _connector.Dispose();
     }
+
+
 }
