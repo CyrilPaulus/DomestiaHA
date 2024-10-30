@@ -1,4 +1,5 @@
 ﻿using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 
 using MQTTnet;
@@ -15,15 +16,18 @@ internal class DomestiaHAHosetedServiceConfiguration
 internal class DomestiaHAHostedService : BackgroundService
 {
     private readonly DomestiaHAHosetedServiceConfiguration _options;
+    private readonly ILogger<DomestiaHAHostedService> _logger;
     private readonly IHAMQTTService _haMQTTService;
 
     private readonly TimeSpan _refreshInterval = TimeSpan.FromSeconds( 1 );
 
     public DomestiaHAHostedService(
+        ILogger<DomestiaHAHostedService> logger,
         IOptions<DomestiaHAHosetedServiceConfiguration> options,
         IHAMQTTService haMQTTService )
     {
         _options = options.Value;
+        _logger = logger;
         _haMQTTService = haMQTTService;
     }
 
@@ -32,9 +36,11 @@ internal class DomestiaHAHostedService : BackgroundService
         var mqttFactory = new MqttFactory();
         using var mqttClient = mqttFactory.CreateMqttClient();
 
+        _logger.LogInformation( "Connecting to MQTT Broker {ipAddres}:{port}", _options.BrokerIPAddress, _options.BrokerPort );
+
         var mqttClientOptions = new MqttClientOptionsBuilder()
-        .WithTcpServer( _options.BrokerIPAddress, _options.BrokerPort )
-        .Build();
+            .WithTcpServer( _options.BrokerIPAddress, _options.BrokerPort )
+            .Build();
 
         await mqttClient.ConnectAsync( mqttClientOptions, stoppingToken );
 

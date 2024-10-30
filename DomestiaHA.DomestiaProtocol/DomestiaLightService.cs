@@ -33,10 +33,14 @@ public class DomestiaLightService : ILightService, IDisposable
 
     public async Task Connect()
     {
+        _logger.LogInformation( "Connecting to Domestia PLC: {ipAddress}", _options.IpAddress );
+
         await _connector.Connect( _options.IpAddress );
 
-        _logger.LogInformation( "Retrieving domestia configuration" );
+        _logger.LogInformation( "Connected to Domestia PLC" );
 
+
+        _logger.LogInformation( "Retrieving domestia configuration" );
         var outputTypes = await GetOutputTypes();
         foreach( var outputType in outputTypes )
         {
@@ -44,12 +48,16 @@ public class DomestiaLightService : ILightService, IDisposable
                 continue;
 
             var outputName = await GetOutputName( outputType.Key );
-            _relayConfigurations.Add( outputName, new DomestiaRelayConfiguration
+
+            var relayConfiguration = new DomestiaRelayConfiguration
                 (
                 RelayId: outputType.Key,
                 RelayType: outputType.Value,
-                Label: outputName
-                ) );
+                Label: outputName );
+
+            _logger.LogInformation( "Relay {relayName}:{relayId} ({relayType})", relayConfiguration.Label, relayConfiguration.RelayId, relayConfiguration.RelayType );
+
+            _relayConfigurations.Add( outputName, relayConfiguration );
         }
 
     }
