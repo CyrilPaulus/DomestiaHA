@@ -31,6 +31,6 @@ public interface ILightService
     /// <returns>All ligth brigthness [0,255]</returns>
     public Task<Dictionary<string, int>> GetAllBrigthness();
 
-    public Task Connect( string ip );
+    public Task Connect();
 
 }

@@ -5,25 +5,35 @@ using DomestiaHA.DomestiaProtocol.Enums;
 using DomestiaHA.DomestiaProtocol.Responses;
 
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 
 namespace DomestiaHA.DomestiaProtocol;
+
+public class DomestiaLightServiceConfiguration
+{
+    public required string IpAddress { get; set; }
+}
+
 public class DomestiaLightService : ILightService, IDisposable
 {
     private readonly ILogger<DomestiaLightService> _logger;
-
+    private readonly DomestiaLightServiceConfiguration _options;
     private readonly DomestiaConnector _connector;
 
     private Dictionary<string, DomestiaRelayConfiguration> _relayConfigurations = new();
 
-    public DomestiaLightService( ILogger<DomestiaLightService> logger )
+    public DomestiaLightService(
+        ILogger<DomestiaLightService> logger,
+        IOptions<DomestiaLightServiceConfiguration> options )
     {
+        _options = options.Value;
         _connector = new DomestiaConnector();
         _logger = logger;
     }
 
-    public async Task Connect( string ip )
+    public async Task Connect()
     {
-        await _connector.Connect( ip );
+        await _connector.Connect( _options.IpAddress );
 
         _logger.LogInformation( "Retrieving domestia configuration" );
 

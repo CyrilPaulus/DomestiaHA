@@ -1,23 +1,29 @@
-﻿using DomestiaHA.Configuration;
-
-using Microsoft.Extensions.Hosting;
+﻿using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Options;
 
 using MQTTnet;
 using MQTTnet.Client;
 
 namespace DomestiaHA.MQTTClient.Services;
+
+internal class DomestiaHAHosetedServiceConfiguration
+{
+    public required string BrokerIPAddress { get; set; }
+    public int BrokerPort { get; set; }
+}
+
 internal class DomestiaHAHostedService : BackgroundService
 {
-    private readonly IDomestiaHAConfigurationService configurationService;
+    private readonly DomestiaHAHosetedServiceConfiguration _options;
     private readonly IHAMQTTService _haMQTTService;
 
     private readonly TimeSpan _refreshInterval = TimeSpan.FromSeconds( 1 );
 
     public DomestiaHAHostedService(
-        IDomestiaHAConfigurationService domestiaHAConfigurationService,
+        IOptions<DomestiaHAHosetedServiceConfiguration> options,
         IHAMQTTService haMQTTService )
     {
-        configurationService = domestiaHAConfigurationService;
+        _options = options.Value;
         _haMQTTService = haMQTTService;
     }
 
@@ -26,10 +32,8 @@ internal class DomestiaHAHostedService : BackgroundService
         var mqttFactory = new MqttFactory();
         using var mqttClient = mqttFactory.CreateMqttClient();
 
-        var mqttConfiguration = configurationService.GetMQTTConfiguration();
-
         var mqttClientOptions = new MqttClientOptionsBuilder()
-        .WithTcpServer( mqttConfiguration.BrokerIPAddress, mqttConfiguration.BrokerPort )
+        .WithTcpServer( _options.BrokerIPAddress, _options.BrokerPort )
         .Build();
 
         await mqttClient.ConnectAsync( mqttClientOptions, stoppingToken );

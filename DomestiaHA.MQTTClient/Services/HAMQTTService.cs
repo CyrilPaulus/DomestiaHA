@@ -3,7 +3,7 @@ using System.Text.RegularExpressions;
 
 using DomestiaHA.Abstraction;
 using DomestiaHA.Abstraction.Models;
-using DomestiaHA.Configuration;
+
 using DomestiaHA.MQTTClient.HAEntities;
 using DomestiaHA.MQTTClient.Services;
 
@@ -12,12 +12,9 @@ using MQTTnet.Client;
 
 namespace DomestiaHA.MQTTClient;
 
-internal partial class HAMQTTService(
-    ILightService domestiaLightService,
-    IDomestiaHAConfigurationService configurationService ) : IHAMQTTService
+internal partial class HAMQTTService( ILightService domestiaLightService ) : IHAMQTTService
 {
     private readonly ILightService _domestiaLightService = domestiaLightService;
-    private readonly IDomestiaHAConfigurationService _configurationService = configurationService;
 
 
     private Dictionary<string, Light> _lights = new Dictionary<string, Light>();
@@ -25,8 +22,7 @@ internal partial class HAMQTTService(
 
     public async Task Initialize( IMqttClient client )
     {
-        var domestiaIPAddress = _configurationService.GetDomestiaConfiguration().DeviceIPAddress;
-        await _domestiaLightService.Connect( "192.168.0.3" );
+        await _domestiaLightService.Connect();
 
         _client = client;
         _client.ApplicationMessageReceivedAsync += Client_ApplicationMessageReceivedAsync;
