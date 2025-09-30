@@ -6,15 +6,18 @@ using DomestiaHA.Abstraction.Models;
 
 using DomestiaHA.MQTTClient.HAEntities;
 using DomestiaHA.MQTTClient.Services;
-
+using Microsoft.Extensions.Logging;
 using MQTTnet;
 using MQTTnet.Client;
 
 namespace DomestiaHA.MQTTClient;
 
-internal partial class HAMQTTService( ILightService domestiaLightService ) : IHAMQTTService
+internal partial class HAMQTTService(
+    ILightService domestiaLightService,
+    ILogger<HAMQTTService> logger ) : IHAMQTTService
 {
     private readonly ILightService _domestiaLightService = domestiaLightService;
+    private readonly ILogger<HAMQTTService> _logger = logger;
 
 
     private Dictionary<string, Light> _lights = new Dictionary<string, Light>();
@@ -61,7 +64,12 @@ internal partial class HAMQTTService( ILightService domestiaLightService ) : IHA
 
         foreach( var light in _lights.Values )
         {
-            await PublishLightStateUpdate( light, allBrightness[light.Label] );
+            if ( !allBrightness.TryGetValue(light.Label, out var brightness) )
+            {
+                _logger.LogWarning("Can't find brightness for light '{light}'.", light.Label);
+                continue;
+            }
+            await PublishLightStateUpdate( light, brightness );
         }
     }
 
