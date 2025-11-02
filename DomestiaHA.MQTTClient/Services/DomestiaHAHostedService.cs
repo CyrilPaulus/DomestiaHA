@@ -19,37 +19,44 @@ internal class DomestiaHAHostedService : BackgroundService
     private readonly ILogger<DomestiaHAHostedService> _logger;
     private readonly IHAMQTTService _haMQTTService;
 
-    private readonly TimeSpan _refreshInterval = TimeSpan.FromSeconds( 1 );
+    private readonly TimeSpan _refreshInterval = TimeSpan.FromSeconds(1);
 
     public DomestiaHAHostedService(
         ILogger<DomestiaHAHostedService> logger,
         IOptions<DomestiaHAHosetedServiceConfiguration> options,
-        IHAMQTTService haMQTTService )
+        IHAMQTTService haMQTTService)
     {
         _options = options.Value;
         _logger = logger;
         _haMQTTService = haMQTTService;
     }
 
-    protected override async Task ExecuteAsync( CancellationToken stoppingToken )
+    protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
         var mqttFactory = new MqttFactory();
         using var mqttClient = mqttFactory.CreateMqttClient();
 
-        _logger.LogInformation( "Connecting to MQTT Broker {ipAddres}:{port}", _options.BrokerIPAddress, _options.BrokerPort );
+        _logger.LogInformation("Connecting to MQTT Broker {ipAddres}:{port}", _options.BrokerIPAddress, _options.BrokerPort);
 
         var mqttClientOptions = new MqttClientOptionsBuilder()
-            .WithTcpServer( _options.BrokerIPAddress, _options.BrokerPort )
+            .WithTcpServer(_options.BrokerIPAddress, _options.BrokerPort)
             .Build();
 
-        await mqttClient.ConnectAsync( mqttClientOptions, stoppingToken );
+        await mqttClient.ConnectAsync(mqttClientOptions, stoppingToken);
 
-        await _haMQTTService.Initialize( mqttClient );
+        await _haMQTTService.Initialize(mqttClient);
 
-        while( !stoppingToken.IsCancellationRequested )
+        while (!stoppingToken.IsCancellationRequested)
         {
-            await _haMQTTService.PublishAllLightsStateUpdates();
-            await Task.Delay( _refreshInterval, stoppingToken );
+            try
+            {
+                await _haMQTTService.PublishAllLightsStateUpdates();
+                await Task.Delay(_refreshInterval, stoppingToken);
+            }
+            catch (Exception e)
+            {
+                _logger.LogError(e, "Error while publish lights updates");
+            }
         }
 
         await mqttClient.DisconnectAsync();
