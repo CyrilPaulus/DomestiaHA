@@ -50,12 +50,15 @@ internal class DomestiaHAHostedService : BackgroundService
         {
             try
             {
-                await _haMQTTService.PublishAllLightsStateUpdates();
-                await Task.Delay(_refreshInterval, stoppingToken);
+                await _haMQTTService.PublishAllLightsStateUpdates();                
             }
             catch (Exception e)
             {
                 _logger.LogError(e, "Error while publish lights updates");
+            }
+            finally
+            {
+                await Task.Delay(_refreshInterval, stoppingToken);
             }
         }
 
