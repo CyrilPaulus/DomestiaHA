@@ -50,7 +50,7 @@ internal class DomestiaHAHostedService : BackgroundService
     private async Task Run(CancellationToken stoppingToken) 
     {
         using var scope = _serviceScopeFactory.CreateScope();
-        var haMQTTService = scope.ServiceProvider.GetRequiredService<HAMQTTService>();
+        var haMQTTService = scope.ServiceProvider.GetRequiredService<IHAMQTTService>();
         var mqttFactory = new MqttFactory();
         using var mqttClient = mqttFactory.CreateMqttClient();
 
