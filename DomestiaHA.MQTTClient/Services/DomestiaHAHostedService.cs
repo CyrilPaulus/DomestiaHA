@@ -1,4 +1,5 @@
-﻿using Microsoft.Extensions.Hosting;
+﻿using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 
@@ -17,22 +18,39 @@ internal class DomestiaHAHostedService : BackgroundService
 {
     private readonly DomestiaHAHosetedServiceConfiguration _options;
     private readonly ILogger<DomestiaHAHostedService> _logger;
-    private readonly IHAMQTTService _haMQTTService;
-
+    private readonly IServiceScopeFactory _serviceScopeFactory;
     private readonly TimeSpan _refreshInterval = TimeSpan.FromSeconds(1);
 
     public DomestiaHAHostedService(
         ILogger<DomestiaHAHostedService> logger,
         IOptions<DomestiaHAHosetedServiceConfiguration> options,
-        IHAMQTTService haMQTTService)
+        IServiceScopeFactory serviceScopeFactory)
     {
         _options = options.Value;
         _logger = logger;
-        _haMQTTService = haMQTTService;
+        _serviceScopeFactory = serviceScopeFactory;
     }
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
+        while (!stoppingToken.IsCancellationRequested)
+        {
+            try
+            {
+                await Run(stoppingToken);
+            }
+            catch (Exception e)
+            {
+                _logger.LogError(e, "Error while running main code");
+                await Task.Delay(_refreshInterval, stoppingToken);
+            }
+        }
+    }
+
+    private async Task Run(CancellationToken stoppingToken) 
+    {
+        using var scope = _serviceScopeFactory.CreateScope();
+        var haMQTTService = scope.ServiceProvider.GetRequiredService<HAMQTTService>();
         var mqttFactory = new MqttFactory();
         using var mqttClient = mqttFactory.CreateMqttClient();
 
@@ -44,24 +62,20 @@ internal class DomestiaHAHostedService : BackgroundService
 
         await mqttClient.ConnectAsync(mqttClientOptions, stoppingToken);
 
-        await _haMQTTService.Initialize(mqttClient);
+        await haMQTTService.Initialize(mqttClient);
 
-        while (!stoppingToken.IsCancellationRequested)
+        try
         {
-            try
+            while (!stoppingToken.IsCancellationRequested)
             {
-                await _haMQTTService.PublishAllLightsStateUpdates();                
-            }
-            catch (Exception e)
-            {
-                _logger.LogError(e, "Error while publish lights updates");
-            }
-            finally
-            {
+                await haMQTTService.PublishAllLightsStateUpdates();
                 await Task.Delay(_refreshInterval, stoppingToken);
             }
         }
+        finally
+        {
 
-        await mqttClient.DisconnectAsync();
+            await mqttClient.DisconnectAsync();
+        }
     }
 }
