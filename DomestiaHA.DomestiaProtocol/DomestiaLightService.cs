@@ -33,6 +33,8 @@ public class DomestiaLightService : ILightService, IDisposable
 
     public async Task Connect()
     {
+        _relayConfigurations.Clear();
+
         _logger.LogInformation( "Connecting to Domestia PLC: {ipAddress}", _options.IpAddress );
 
         await _connector.Connect( _options.IpAddress );
@@ -57,7 +59,8 @@ public class DomestiaLightService : ILightService, IDisposable
 
             _logger.LogInformation( "Relay {relayName}:{relayId} ({relayType})", relayConfiguration.Label, relayConfiguration.RelayId, relayConfiguration.RelayType );
 
-            _relayConfigurations.Add( outputName, relayConfiguration );
+            if (!_relayConfigurations.TryAdd(outputName, relayConfiguration))
+                _logger.LogWarning("Duplicate relay name: {relayName}", outputName);
         }
 
     }
