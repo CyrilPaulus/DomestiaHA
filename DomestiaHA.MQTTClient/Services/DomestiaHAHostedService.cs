@@ -8,7 +8,7 @@ using MQTTnet.Client;
 
 namespace DomestiaHA.MQTTClient.Services;
 
-internal class DomestiaHAHosetedServiceConfiguration
+internal class DomestiaHAHostedServiceConfiguration
 {
     public required string BrokerIPAddress { get; set; }
     public int BrokerPort { get; set; }
@@ -16,14 +16,14 @@ internal class DomestiaHAHosetedServiceConfiguration
 
 internal class DomestiaHAHostedService : BackgroundService
 {
-    private readonly DomestiaHAHosetedServiceConfiguration _options;
+    private readonly DomestiaHAHostedServiceConfiguration _options;
     private readonly ILogger<DomestiaHAHostedService> _logger;
     private readonly IServiceScopeFactory _serviceScopeFactory;
     private readonly TimeSpan _refreshInterval = TimeSpan.FromSeconds(1);
 
     public DomestiaHAHostedService(
         ILogger<DomestiaHAHostedService> logger,
-        IOptions<DomestiaHAHosetedServiceConfiguration> options,
+        IOptions<DomestiaHAHostedServiceConfiguration> options,
         IServiceScopeFactory serviceScopeFactory)
     {
         _options = options.Value;
@@ -47,7 +47,7 @@ internal class DomestiaHAHostedService : BackgroundService
         }
     }
 
-    private async Task Run(CancellationToken stoppingToken) 
+    private async Task Run(CancellationToken stoppingToken)
     {
         using var scope = _serviceScopeFactory.CreateScope();
         var haMQTTService = scope.ServiceProvider.GetRequiredService<IHAMQTTService>();
