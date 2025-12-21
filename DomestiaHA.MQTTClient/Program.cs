@@ -10,8 +10,8 @@ using Microsoft.Extensions.Hosting;
 var builder = Host
     .CreateApplicationBuilder(args);
 
-builder.Services.AddSingleton<IHAMQTTService, HAMQTTService>();
-builder.Services.AddSingleton<ILightService, DomestiaLightService>();
+builder.Services.AddScoped<IHAMQTTService, HAMQTTService>();
+builder.Services.AddScoped<ILightService, DomestiaLightService>();
 builder.Services.AddHostedService<DomestiaHAHostedService>();
 
 builder.Services.Configure<DomestiaHAHostedServiceConfiguration>(config =>
