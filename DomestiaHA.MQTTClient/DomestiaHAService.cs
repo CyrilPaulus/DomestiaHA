@@ -1,4 +1,4 @@
-using System.Text.Json;
+﻿using System.Text.Json;
 
 using DomestiaHA.DomestiaProtocol;
 
@@ -183,7 +183,7 @@ internal class DomestiaHAService(
         }
     }
 
-    private async Task Apply( DomestiaLight light, HALightState command )
+    internal async Task Apply( DomestiaLight light, HALightState command )
     {
         if( command.State == HALightStateEnum.OFF )
         {
@@ -207,7 +207,7 @@ internal class DomestiaHAService(
             await domestia.Toggle( light.Output );
     }
 
-    private static int ToBrightness( byte value, bool dimmable )
+    internal static int ToBrightness( byte value, bool dimmable )
     {
         if( !dimmable )
             return value > 0 ? 255 : 0;
@@ -215,7 +215,7 @@ internal class DomestiaHAService(
         return (int) Math.Round( Math.Min( value, DomestiaClient.MaxDimValue ) * 255.0 / DomestiaClient.MaxDimValue );
     }
 
-    private static byte ToDimValue( int brightness )
+    internal static byte ToDimValue( int brightness )
     {
         if( brightness <= 0 )
             return 0;

@@ -7,6 +7,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DomestiaHA.MQTTClient", "Do
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DomestiaHA.DomestiaProtocol", "DomestiaHA.DomestiaProtocol\DomestiaHA.DomestiaProtocol.csproj", "{BA80C45F-BF83-4EC0-AAA8-9A94D39848DD}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DomestiaHA.Tests", "DomestiaHA.Tests\DomestiaHA.Tests.csproj", "{C937135A-57BE-4D1A-96B2-B24CF2289612}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -41,6 +43,18 @@ Global
 		{BA80C45F-BF83-4EC0-AAA8-9A94D39848DD}.Release|x64.Build.0 = Release|Any CPU
 		{BA80C45F-BF83-4EC0-AAA8-9A94D39848DD}.Release|x86.ActiveCfg = Release|Any CPU
 		{BA80C45F-BF83-4EC0-AAA8-9A94D39848DD}.Release|x86.Build.0 = Release|Any CPU
+		{C937135A-57BE-4D1A-96B2-B24CF2289612}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{C937135A-57BE-4D1A-96B2-B24CF2289612}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{C937135A-57BE-4D1A-96B2-B24CF2289612}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{C937135A-57BE-4D1A-96B2-B24CF2289612}.Debug|x64.Build.0 = Debug|Any CPU
+		{C937135A-57BE-4D1A-96B2-B24CF2289612}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{C937135A-57BE-4D1A-96B2-B24CF2289612}.Debug|x86.Build.0 = Debug|Any CPU
+		{C937135A-57BE-4D1A-96B2-B24CF2289612}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{C937135A-57BE-4D1A-96B2-B24CF2289612}.Release|Any CPU.Build.0 = Release|Any CPU
+		{C937135A-57BE-4D1A-96B2-B24CF2289612}.Release|x64.ActiveCfg = Release|Any CPU
+		{C937135A-57BE-4D1A-96B2-B24CF2289612}.Release|x64.Build.0 = Release|Any CPU
+		{C937135A-57BE-4D1A-96B2-B24CF2289612}.Release|x86.ActiveCfg = Release|Any CPU
+		{C937135A-57BE-4D1A-96B2-B24CF2289612}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

@@ -1,4 +1,4 @@
-using System.Net.Sockets;
+﻿using System.Net.Sockets;
 using System.Text;
 
 namespace DomestiaHA.DomestiaProtocol;
@@ -7,12 +7,12 @@ namespace DomestiaHA.DomestiaProtocol;
 /// Client for the Domestia PLC TCP protocol.
 /// The connection is opened on demand and dropped after any error, so the next call reconnects.
 /// </summary>
-public sealed class DomestiaClient( string host ) : IDisposable
+public sealed class DomestiaClient( string host, int port = DomestiaClient.DefaultPort, TimeSpan? timeout = null ) : IDisposable
 {
     public const byte MaxDimValue = 63;
+    public const int DefaultPort = 52001;
 
-    private const int Port = 52001;
-    private static readonly TimeSpan Timeout = TimeSpan.FromSeconds( 2 );
+    private readonly TimeSpan _timeout = timeout ?? TimeSpan.FromSeconds( 2 );
 
     private readonly SemaphoreSlim _lock = new( 1, 1 );
     private TcpClient? _tcpClient;
@@ -76,13 +76,13 @@ public sealed class DomestiaClient( string host ) : IDisposable
         await _lock.WaitAsync();
         try
         {
-            using var cts = new CancellationTokenSource( Timeout );
+            using var cts = new CancellationTokenSource( _timeout );
 
             if( _tcpClient is not { Connected: true } )
             {
                 _tcpClient?.Dispose();
                 _tcpClient = new TcpClient();
-                await _tcpClient.ConnectAsync( host, Port, cts.Token );
+                await _tcpClient.ConnectAsync( host, port, cts.Token );
             }
 
             var stream = _tcpClient.GetStream();
@@ -102,7 +102,7 @@ public sealed class DomestiaClient( string host ) : IDisposable
             _tcpClient = null;
 
             if( e is OperationCanceledException )
-                throw new TimeoutException( $"Domestia PLC did not answer command {commandId} within {Timeout}", e );
+                throw new TimeoutException( $"Domestia PLC did not answer command {commandId} within {_timeout}", e );
             throw;
         }
         finally
