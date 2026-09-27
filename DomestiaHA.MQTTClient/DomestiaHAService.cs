@@ -6,7 +6,6 @@ using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 
 using MQTTnet;
-using MQTTnet.Client;
 
 namespace DomestiaHA.MQTTClient;
 
@@ -62,7 +61,7 @@ internal class DomestiaHAService(
     {
         var lights = await LoadLights();
 
-        using var mqtt = new MqttFactory().CreateMqttClient();
+        using var mqtt = new MqttClientFactory().CreateMqttClient();
         mqtt.ApplicationMessageReceivedAsync += e => OnCommand( e, lights );
 
         logger.LogInformation( "Connecting to MQTT broker {host}:{port}", broker.Host, broker.Port );
