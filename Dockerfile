@@ -11,7 +11,6 @@ FROM mcr.microsoft.com/dotnet/sdk:9.0 AS build
 ARG BUILD_CONFIGURATION=Release
 WORKDIR /src
 COPY ["DomestiaHA.MQTTClient/DomestiaHA.MQTTClient.csproj", "DomestiaHA.MQTTClient/"]
-COPY ["DomestiaHA.Abstraction/DomestiaHA.Abstraction.csproj", "DomestiaHA.Abstraction/"]
 COPY ["DomestiaHA.DomestiaProtocol/DomestiaHA.DomestiaProtocol.csproj", "DomestiaHA.DomestiaProtocol/"]
 RUN dotnet restore "./DomestiaHA.MQTTClient/DomestiaHA.MQTTClient.csproj"
 COPY . .

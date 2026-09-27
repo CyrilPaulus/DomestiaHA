@@ -1,4 +1,4 @@
-﻿namespace DomestiaHA.DomestiaProtocol.Enums;
+﻿namespace DomestiaHA.DomestiaProtocol;
 public enum RelayType
 {
     Toggle = 0,
@@ -25,4 +25,9 @@ public enum RelayType
     RGBWhite = 15,
 
     Unused = 255
+}
+
+public static class RelayTypeExtensions
+{
+    public static bool IsDimmable( this RelayType type ) => type is RelayType.DimmerStop or RelayType.DimmerContinue;
 }

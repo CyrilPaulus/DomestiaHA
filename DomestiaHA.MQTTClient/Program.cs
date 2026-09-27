@@ -1,29 +1,23 @@
-﻿using DomestiaHA.Abstraction;
-using DomestiaHA.DomestiaProtocol;
-using DomestiaHA.DomestiaProtocol.Extensions;
 using DomestiaHA.MQTTClient;
-using DomestiaHA.MQTTClient.Services;
+using DomestiaHA.DomestiaProtocol;
 
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 
-var builder = Host
-    .CreateApplicationBuilder(args);
+var builder = Host.CreateApplicationBuilder( args );
+var config = builder.Configuration;
 
-builder.Services.AddScoped<IHAMQTTService, HAMQTTService>();
-builder.Services.AddScoped<ILightService, DomestiaLightService>();
-builder.Services.AddHostedService<DomestiaHAHostedService>();
+string Required( string key ) => config[key] is { Length: > 0 } value
+    ? value
+    : throw new InvalidOperationException( $"Missing configuration: {key}" );
 
-builder.Services.Configure<DomestiaHAHostedServiceConfiguration>(config =>
-{
-    config.BrokerIPAddress = builder.Configuration["MQTT_BROKER_IP_ADDRESS"]!;
-    config.BrokerPort = int.Parse(builder.Configuration["MQTT_BROKER_PORT"]!);
-});
+var domestiaHost = Required( "DOMESTIA_IP_ADDRESS" );
+var broker = new MqttBrokerSettings(
+    Required( "MQTT_BROKER_IP_ADDRESS" ),
+    int.TryParse( config["MQTT_BROKER_PORT"], out var port ) ? port : 1883 );
 
-builder.Services.AddDomestiaLightService(config =>
-{
-    config.IpAddress = builder.Configuration["DOMESTIA_IP_ADDRESS"]!;
-});
+builder.Services.AddSingleton( _ => new DomestiaClient( domestiaHost ) );
+builder.Services.AddSingleton( broker );
+builder.Services.AddHostedService<DomestiaHAService>();
 
-var app = builder.Build();
-app.Run();
+builder.Build().Run();

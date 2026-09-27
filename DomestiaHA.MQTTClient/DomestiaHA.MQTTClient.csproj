@@ -10,12 +10,11 @@
     <PackageReference Include="MQTTnet" Version="4.3.7.1207" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\DomestiaHA.Abstraction\DomestiaHA.Abstraction.csproj" />
-    <ProjectReference Include="..\DomestiaHA.DomestiaProtocol\DomestiaHA.DomestiaProtocol.csproj" />
-  </ItemGroup>
-  <ItemGroup>
     <None Update="appsettings.json">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\DomestiaHA.DomestiaProtocol\DomestiaHA.DomestiaProtocol.csproj" />
   </ItemGroup>
 </Project>
